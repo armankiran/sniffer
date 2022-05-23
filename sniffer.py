@@ -2,13 +2,16 @@ import os
 import subprocess
 import argparse
 from geopy.geocoders import Nominatim
+EXIF_PATH = r'exiftool'
 
 def main():
     #TODO add option to scan multiple images
     parser = argparse.ArgumentParser(description='A test program.')
-    parser.add_argument("-a", "--all", nargs="?", const=os.getcwd(), help="Scans all.")
-    parser.add_argument("-s", "--single", help="Scans an image.")
-    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help="Lists images.")
+    parser.add_argument("-a", "--all", nargs="?", const=os.getcwd(), help='''Scans all the images in the directory. 
+    If no path has been specified, scans the images from sniffer's path.\nUsage: -a, --all /PATH''')
+    parser.add_argument("-s", "--single", help="Scans an image.\nUsage: -s, --single /PATH")
+    parser.add_argument("-l", "--list", nargs="?", const=os.getcwd(), help='''Lists the available image files in the directory.
+    If no path has been specified, scans the images from sniffer's path.\nUsage: -l, --list /PATH''')
     args = parser.parse_args()
     if args.all:
         check_all(args.all)
@@ -28,6 +31,7 @@ def check_single(img):
     location = geolocator.reverse(get_dec(gps[0])+","+(get_dec(gps[1])))
     print(location)
 
+
 def check_all(dir):
     '''scan all the images from the directory'''
     #TODO add more file formats
@@ -36,6 +40,7 @@ def check_all(dir):
             if not entry.name.startswith('.') and entry.is_file() and entry.name.lower().endswith(('.jpg', '.jpeg', '.png')):
                 print(entry.name + ' - ', end='')
                 check_single(entry.name)
+
 
 def check_dir(dir):
     '''get lists of images from the directory'''
@@ -48,14 +53,15 @@ def check_dir(dir):
 
 def get_exif(file):
     '''get exif data from the file'''
-    raw = subprocess.check_output(['exiftool', '-gpsposition', file])
+    raw = subprocess.check_output([EXIF_PATH, '-gpsposition', file])
     exif = "".join(map(chr, raw))
     gps = exif[34:]
     return gps.split(',')
-    
+
+
 def get_dec(loc):
     '''format exiftool data to be used by geopy'''
-    directions = {'N':1, 'S':-1, 'E': 1, 'W':-1}
+    directions = {'N': 1, 'S': -1, 'E': 1, 'W': -1}
     dec = loc.replace(u'deg', '').replace("'", '').replace('"', '')
     dec = dec.split()
     dir = dec.pop()
